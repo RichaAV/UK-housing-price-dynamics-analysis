@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bubble Chart with Slider and Play Button</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <style>
+        .bubble {
+            stroke: #000;
+            stroke-width: 0.01px;
+        }
+        .axis-label {
+            font-size: 12px;
+            text-anchor: middle;
+        }
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+        .grid line {
+            stroke: lightgrey;
+            stroke-opacity: 0.7;
+            shape-rendering: crispEdges;
+        }
+        .grid path {
+            stroke-width: 0;
+        }
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            width: 120px;
+            padding: 8px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+        }
+        .legend {
+            font-size: 12px;
+        }
+        .legend-color {
+            border-radius: 50%;
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+<h2>Figure 2: Relationship between average incomes, mortgage advances, and house prices evolved in different UK regions from 1986 to 2023
+</h2>
+<p>Click on Play or drag the slider:</p>
+<div id="slider-container">
+    <button id="play-button">Play</button>
+    <input type="range" id="year-slider" min="1986" max="2023" step="1" value="1986"/>
+    <label for="year-slider">Year: <span id="year-label">1986</span></label>
+</div>
+<svg width="960" height="500"></svg>
+<div id="tooltip" class="tooltip"></div>
+
+<script>
+    // Set the dimensions and margins of the graph
+    var margin = {top: 20, right: 20, bottom: 60, left: 90},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    // Create SVG element
+    var svg = d3.select("svg")
+        .attr("width", width + margin.left + margin.right + 100)
+        .attr("height", height + margin.top + margin.bottom + 1000)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Scales and axes
+    var x = d3.scaleLinear().range([0, width]);
+    var y = d3.scaleLinear().range([height, 0]);
+    var r = d3.scaleSqrt().range([0, 40]);
+    var color = d3.scaleOrdinal(d3.schemeCategory10);
+    //var xAxis = svg.append("g").attr("transform", "translate(0," + height + ")");
+    //var yAxis = svg.append("g");
+    // Axis groups
+    var xAxisGroup = svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .attr("class", "axis");
+    var yAxisGroup = svg.append("g")
+        .attr("class", "axis");
+    // Tooltip
+    var tooltip = d3.select("#tooltip");
+
+    // Legend
+    var legend = svg.append("g")
+        .attr("transform", "translate(" + (width - 100) + ",0)")
+        .selectAll(".legend")
+        .enter().append("g")
+        .attr("class", "legend")
+        .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+    // Data load and setup
+    d3.json("data3.json").then(function(data) {
+        // Process data
+        data.forEach(function(d) {
+            d.AverageIncome = +d.AverageIncome;
+            d.AverageAdvance = +d.AverageAdvance;
+            d.AverageHousePrice = +d.AverageHousePrice;
+            d.Year = +d.Year;
+        });
+
+        // Set domains for scales
+        x.domain(d3.extent(data, function(d) { return d.AverageIncome; })).nice();
+        y.domain(d3.extent(data, function(d) { return d.AverageAdvance; })).nice();
+        r.domain([0, d3.max(data, function(d) { return d.AverageHousePrice; })]);
+        color.domain(d3.map(data, function(d) { return d.Region; }).keys());
+
+        // Add the x-axis
+        //xAxis.call(d3.axisBottom(x));
+
+        // Add the y-axis
+        //yAxis.call(d3.axisLeft(y));
+        // Add the x-axis
+        xAxisGroup.call(d3.axisBottom(x));
+
+// Add the y-axis
+        yAxisGroup.call(d3.axisLeft(y));
+
+// Add X axis label
+        xAxisGroup.append("text")
+            .attr("class", "axis-label")
+            .attr("text-anchor", "middle")
+            .attr("x", width / 2)
+            .attr("y", margin.bottom - 10)
+            .attr("fill", "black") // Set text color to black
+            .text("Average Income (£)");
+
+// Add Y axis label
+        yAxisGroup.append("text")
+            .attr("class", "axis-label")
+            .attr("text-anchor", "middle")
+            .attr("transform", "rotate(-90)")
+            .attr("y", -margin.left + 20)
+            .attr("x", -height / 2)
+            .attr("fill", "black") // Set text color to black
+            .text("Average Advance (£)");
+
+        // Set color domain after processing data
+        color.domain(d3.map(data, function(d) { return d.Region; }).keys());
+        // Legend dimensions
+        var legendPadding = 10;
+        var legendItemHeight = 20;
+        var legendItemWidth = 18;
+
+// Adjust the y-position to be below the chart
+        var legend = svg.selectAll(".legend")
+            .data(color.domain())
+            .enter().append("g")
+            .attr("class", "legend")
+            .attr("transform", function(d, i) {
+                return "translate(0," + (height + margin.bottom + 240 - legendPadding - (legendItemHeight * color.domain().length) + (i * legendItemHeight)) + ")";2
+            });
+
+// Add a colored square to each legend item
+        legend.append("rect")
+            .attr("x", width - legendItemWidth)
+            .attr("width", legendItemWidth)
+            .attr("height", legendItemHeight - legendPadding)
+            .style("fill", color);
+
+// Add text to each legend item
+        legend.append("text")
+            .attr("x", width - legendItemWidth - legendPadding)
+            .attr("y", legendItemHeight / 2)
+            .attr("dy", ".35em")
+            .style("text-anchor", "end")
+            .text(function(d) { return d; });
+        // Play button functionality
+        var playButton = d3.select("#play-button");
+        var playing = false;
+        var timer;
+
+        // Slider functionality
+        var slider = d3.select("#year-slider")
+            .on("input", function() {
+                var year = +this.value;
+                update(year);
+            });
+
+        playButton.on("click", function() {
+            var button = d3.select(this);
+            if (button.text() === "Play") {
+                playing = true;
+                button.text("Pause");
+                timer = setInterval(function() {
+                    var year = +slider.property("value");
+                    year = year < +slider.attr("max") ? year + 1 : +slider.attr("min");
+                    slider.property("value", year);
+                    update(year);
+                }, 1000);
+            } else {
+                playing = false;
+                button.text("Play");
+                clearInterval(timer);
+            }
+        });
+
+        // Update function
+        function update(year) {
+            var yearData = data.filter(function(d) { return d.Year === year; });
+            var bubbles = svg.selectAll(".bubble")
+                .data(yearData, function(d) { return d.Region; });
+
+            // Enter new bubbles
+            bubbles.enter().append("circle")
+                .attr("class", "bubble")
+                .attr("cx", function(d) { return x(d.AverageIncome); })
+                .attr("cy", function(d) { return y(d.AverageAdvance); })
+                .attr("r", function(d) { return r(d.AverageHousePrice); })
+                .style("fill", function(d) { return color(d.Region); })
+                .on("mouseover", function(d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", .9);
+                    tooltip.html(d.Region + "<br/> House Price: " + d.AverageHousePrice)
+                        .style("left", (d3.event.pageX) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+                })
+                .on("mouseout", function(d) {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+            // Update existing bubbles
+            bubbles.transition()
+                .duration(200)
+                .attr("cx", function(d) { return x(d.AverageIncome); })
+                .attr("cy", function(d) { return y(d.AverageAdvance); })
+                .attr("r", function(d) { return r(d.AverageHousePrice); });
+
+            // Remove old bubbles
+            bubbles.exit().remove();
+
+            // Update the year label
+            d3.select("#year-label").text(year);
+        }
+
+        // Initialize the plot with the first year's data
+        update(+slider.property("value"));
+    });
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>House Prices Data Analysis</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+</head>
+<body>
+<img src="skyline3.jpg.png" width="100%">
+<div class="container">
+    <h2>House Prices Data Analysis</h2>
+
+    <!-- Nav tabs -->
+    <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation"><a href="#line-graph" aria-controls="line-graph" role="tab" data-toggle="tab">Figure 1</a></li>
+        <li role="presentation"><a href="#bubble-chart" aria-controls="bubble-chart" role="tab" data-toggle="tab">Figure 2</a></li>
+
+        <li role="presentation" class="active"><a href="#map" aria-controls="map" role="tab" data-toggle="tab">Figure 3</a></li>
+    </ul>
+
+    <!-- Tab panes -->
+    <div class="tab-content">
+        <div role="tabpanel" class="tab-pane active" id="map"><iframe src="map9.html" style="width:100%; height:2000px;"></iframe></div>
+        <div role="tabpanel" class="tab-pane" id="bubble-chart"><iframe src="EconomicFactors3.html" style="width:100%; height:2000px;"></iframe></div>
+        <div role="tabpanel" class="tab-pane" id="line-graph"><iframe src="OverallLineGraph.html" style="width:100%; height:2000px;"></iframe></div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function(){
+        // Load initial content
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            var target = $(e.target).attr("href");
+            $(target + ' iframe').attr('src', $(target + ' iframe').attr('src'));
+        });
+    });
+</script>
+
+</body>
+</html>

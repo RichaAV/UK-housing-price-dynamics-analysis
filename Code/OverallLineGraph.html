@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <!-- Load the D3 library -->
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        .line {
+            fill: none;
+            stroke-width: 2;
+        }
+        .axis text {
+            font: 10px sans-serif;
+        }
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+        .legend {
+            font-size: 14px;
+            font-family: sans-serif;
+        }
+        .axis-title {
+            font-size: 12px;
+            font-weight: bold;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+<body>
+<h2>Figure 1: Trend Analysis of Average Dwelling Prices</h2>
+<svg width="960" height="550"></svg>
+<script>
+    // Set the dimensions of the canvas / graph
+    const margin = {top: 30, right: 150, bottom: 160, left: 100},
+        width = 960 - margin.left - margin.right,
+        height = 550 - margin.top - margin.bottom +100;
+
+    // Set the ranges
+    const x = d3.scaleTime().range([0, width]);
+    const y = d3.scaleLinear().range([height, 0]);
+    const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+    // Define the line generator
+    const lineGenerator = d3.line()
+        .x(d => x(d.Year))
+        .y(d => y(d['All dwellings']));
+
+    // Append the svg object to the body of the page
+    const svg = d3.select("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Get the data
+    d3.json("Table 23.json").then(function(data) {
+
+        // Format the data and sort by year
+        data.forEach(function(d) {
+            d.Year = new Date(+d.Year, 0, 1);
+            d['All dwellings'] = +d['All dwellings'];
+        });
+        data.sort((a, b) => d3.ascending(a.Year, b.Year));
+
+        // Group the data by region
+        const dataByRegion = d3.group(data, d => d.Region);
+
+        // Set the domain for the axes
+        x.domain(d3.extent(data, d => d.Year));
+        y.domain([
+            d3.min(data, d => d['All dwellings']),
+            d3.max(data, d => d['All dwellings'])
+        ]);
+
+        // Draw the lines
+        dataByRegion.forEach(function(values, region) {
+            svg.append("path")
+                .data([values])
+                .attr("class", "line")
+                .style("stroke", color(region))
+                .attr("d", lineGenerator);
+        });
+
+        // Add the X Axis
+        svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%Y")));
+
+        // Add the Y Axis
+        svg.append("g")
+            .call(d3.axisLeft(y));
+
+        // Add X axis title
+        svg.append("text")
+            .attr("class", "axis-title")
+            .attr("text-anchor", "middle")
+            .attr("x", width / 2)
+            .attr("y", height + margin.top + 40)
+            .text("Year");
+
+        // Add Y axis title
+        svg.append("text")
+            .attr("class", "axis-title")
+            .attr("text-anchor", "middle")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -height / 2)
+            .attr("y", -margin.left + 20)
+            .text("Average housing price (Pounds)");
+
+        // Add a legend
+        const legend = svg.selectAll(".legend")
+            .data(Array.from(dataByRegion.keys()))
+            .enter().append("g")
+            .attr("class", "legend")
+            .attr("transform", (d, i) => "translate(0," + i * 20 + ")");
+
+        legend.append("rect")
+            .attr("x", width + 18)
+            .attr("width", 18)
+            .attr("height", 18)
+            .style("fill", color);
+
+        legend.append("text")
+            .attr("x", width + 44)
+            .attr("y", 9)
+            .attr("dy", ".35em")
+            .style("text-anchor", "start")
+            .text(d => d);
+    });
+</script>
+</body>
+</html>
