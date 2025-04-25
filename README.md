@@ -1,4 +1,4 @@
-UK Housing Price Dynamics Analysis
+# UK Housing Price Dynamics Analysis
 Analysis of UK housing price dynamics using D3.js, focusing on trends, regional comparisons, and the relationship between incomes, mortgages, and house prices.
 
 This visualization project explores the dynamics of UK housing 
